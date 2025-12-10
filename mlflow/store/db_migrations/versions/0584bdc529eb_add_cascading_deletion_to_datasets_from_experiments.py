@@ -4,6 +4,8 @@ Create Date: 2024-11-11 15:27:53.189685
 
 """
 
+import logging
+
 import sqlalchemy as sa
 from alembic import op
 
@@ -15,33 +17,44 @@ revision = "0584bdc529eb"
 down_revision = "f5a4f2784254"
 branch_labels = None
 depends_on = None
+_logger = logging.getLogger(__name__)
 
 
 def get_datasets_experiment_fk_name():
     conn = op.get_bind()
-    metadata = sa.MetaData()
-    metadata.bind = conn
-    datasets_table = sa.Table(
-        SqlDataset.__tablename__,
-        metadata,
-        autoload_with=conn,
-    )
+    query = sa.text("""
+        SELECT CONSTRAINT_NAME
+        FROM INFORMATION_SCHEMA.REFERENTIAL_CONSTRAINTS
+        WHERE
+            CONSTRAINT_SCHEMA = DATABASE()
+            AND TABLE_NAME = :child_table
+            AND REFERENCED_TABLE_NAME = :parent_table
+        LIMIT 1
+    """)
+    result = conn.execute(
+        query,
+        {
+            "child_table": SqlDataset.__tablename__,
+            "parent_table": SqlExperiment.__tablename__,
+        },
+    ).fetchone()
 
-    for constraint in datasets_table.foreign_key_constraints:
-        if (
-            constraint.referred_table.name == SqlExperiment.__tablename__
-            and constraint.column_keys[0] == "experiment_id"
-        ):
-            return constraint.name
+    if not result:
+        raise RuntimeError(
+            f"No foreign key found from '{SqlDataset.__tablename__}' "
+            f"to '{SqlExperiment.__tablename__}'."
+        )
+        raise MlflowException(
+            "Unable to find the foreign key constraint name from datasets to experiments. "
+            "All foreign key constraints in datasets table: \n"
+        )
 
-    raise MlflowException(
-        "Unable to find the foreign key constraint name from datasets to experiments. "
-        "All foreign key constraints in datasets table: \n"
-        f"{datasets_table.foreign_key_constraints}"
-    )
+    return result[0]  # e.g., 'datasets_OBFK_1734567890'
 
 
 def upgrade():
+    _logger.info(f"Migration {revision} start")
+
     dialect_name = op.get_context().dialect.name
 
     # standardize the constraint to sqlite naming convention
@@ -80,6 +93,8 @@ def upgrade():
             ["experiment_id"],
             ondelete="CASCADE",
         )
+
+    _logger.info(f"✓ Migration {revision} completed.")
 
 
 def downgrade():
