@@ -3350,7 +3350,7 @@ wheels = [
 
 [[package]]
 name = "mlflow"
-version = "3.7.0rc0"
+version = "3.7.0+obmysql"
 source = { editable = "." }
 dependencies = [
     { name = "alembic" },

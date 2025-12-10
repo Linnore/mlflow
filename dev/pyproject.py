@@ -228,7 +228,9 @@ def build(package_type: PackageType) -> None:
     core_requirements = read_requirements_yaml(requirements_dir / "core-requirements.yaml")
     gateways_requirements = read_requirements_yaml(requirements_dir / "gateway-requirements.yaml")
     package_version = re.search(
-        r'^VERSION = "([a-z0-9\.]+)"$', Path("mlflow", "version.py").read_text(), re.MULTILINE
+        r'^VERSION = "([a-zA-Z0-9\.\+\-_]+)"$',
+        Path("mlflow", "version.py").read_text(),
+        re.MULTILINE,
     ).group(1)
     python_version = Path(".python-version").read_text().strip()
     versions_yaml = read_package_versions_yml()
