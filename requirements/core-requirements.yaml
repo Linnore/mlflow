@@ -36,14 +36,14 @@ pandas:
   max_major_version: 2
 
 sqlalchemy:
-  pip_release: sqlalchemy
+  pip_release: sqlalchemy[pymysql]
   minimum: "1.4.0"
   max_major_version: 2
 
 pyobsql:
   pip_release: pyobsql
   minimum: "0.1.0"
-  max_major_version: 1
+  max_major_version: 0
 
 cryptography:
   pip_release: cryptography

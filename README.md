@@ -1,3 +1,43 @@
+# Notes:
+
+This repo contains modified versions of MLflow to use MySQL-mode Oceanbase as the backend store.
+
+## Installation
+
+One needs to build a distributable artifact manually by following [COMTRIBUTING.md](https://github.com/mlflow/mlflow/blob/master/CONTRIBUTING.md#building-a-distributable-artifact):
+
+```bash
+cd mlflow/server/js
+yarn build
+```
+
+Then
+
+```bash
+cd -
+python -m build
+```
+
+And lastly install `mlflow` using the `whl`:
+
+```bash
+# Activate your python environment to use mlflow with oceanbase
+pip install ./dist/mlflow-3.10.0+obmysql-py3-none-any.whl
+
+```
+
+## Usage
+
+Use `mysql+obmysql` as the database and drivername for the SQLAlchemy's URL:
+
+```bash
+MLFLOW_BACKEND_STORE_URI=mysql+obmysql://user@tenant:password@host:port/schema
+```
+
+Note that this will register the in-process MySQL-mode Oceanbase dialects from [pyobsql](https://github.com/oceanbase/ecology-plugins/tree/main/pyobsql-oceanbase-plugin) for SQLAlchemy. The standard SQLAlchemy dialect package has not been officially provided by the Oceanbase team now.
+
+---
+
 <h1 align="center" style="border-bottom: none">
     <a href="https://mlflow.org/">
         <img alt="MLflow logo" src="https://raw.githubusercontent.com/mlflow/mlflow/refs/heads/master/assets/logo.svg" width="200" />
