@@ -6,6 +6,8 @@ Create Date: 2019-04-22 15:29:24.921354
 
 import sqlalchemy as sa
 from alembic import op
+from sqlalchemy import inspect
+from sqlalchemy.engine.interfaces import ReflectedForeignKeyConstraint
 
 # revision identifiers, used by Alembic.
 revision = "451aebb31d03"
@@ -14,16 +16,66 @@ branch_labels = None
 depends_on = None
 
 
+def _is_oceanbase(conn):
+    dialect_name = conn.dialect.name
+    driver = getattr(conn.dialect, "driver", "")
+
+    engine = getattr(conn, "engine", None)
+    url_str = str(engine.url) if engine and hasattr(engine, "url") else ""
+    url_str = url_str.lower()
+
+    return dialect_name == "mysql" and ("obmysql" in driver or "oceanbase" in url_str)
+
+
 def upgrade():
-    op.add_column("metrics", sa.Column("step", sa.BigInteger(), nullable=False, server_default="0"))
-    # Use batch mode so that we can run "ALTER TABLE" statements against SQLite
-    # databases (see more info at https://alembic.sqlalchemy.org/en/latest/
-    # batch.html#running-batch-migrations-for-sqlite-and-other-databases)
-    with op.batch_alter_table("metrics") as batch_op:
-        batch_op.drop_constraint(constraint_name="metric_pk", type_="primary")
-        batch_op.create_primary_key(
-            constraint_name="metric_pk", columns=["key", "timestamp", "step", "run_uuid", "value"]
-        )
+    conn = op.get_bind()
+    op.add_column(
+        "metrics",
+        sa.Column("step", sa.BigInteger(), nullable=False, server_default="0"),
+    )
+
+    if _is_oceanbase(conn):
+        inspector = inspect(conn)
+
+        pk = inspector.get_pk_constraint("metrics")
+        pk_columns_set = set(pk["constrained_columns"])
+
+        fks = inspector.get_foreign_keys("metrics")
+
+        # Use batch mode so that we can run "ALTER TABLE" statements against SQLite
+        # databases (see more info at https://alembic.sqlalchemy.org/en/latest/batch.html#
+        # running-batch-migrations-for-sqlite-and-other-databases)
+        with op.batch_alter_table("metrics", recreate="auto") as batch_op:
+            cache_fks: list[ReflectedForeignKeyConstraint] = []
+            for fk in fks:
+                if any(col in pk_columns_set for col in fk["constrained_columns"]):
+                    cache_fks.append(fk)
+                    batch_op.drop_constraint(constraint_name=fk["name"], type_="foreignkey")
+
+            batch_op.drop_constraint(constraint_name="metric_pk", type_="primary")
+            batch_op.create_primary_key(
+                constraint_name="metric_pk",
+                columns=["key", "timestamp", "step", "run_uuid", "value"],
+            )
+
+            for fk in cache_fks:
+                batch_op.create_foreign_key(
+                    constraint_name=fk["name"],
+                    referent_table=fk["referred_table"],
+                    referent_schema=fk["referred_schema"],
+                    local_cols=fk["constrained_columns"],
+                    remote_cols=fk["referred_columns"],
+                    **fk["options"],
+                )
+
+    else:
+        # Original MLflow v3.13.0 logic
+        with op.batch_alter_table("metrics") as batch_op:
+            batch_op.drop_constraint(constraint_name="metric_pk", type_="primary")
+            batch_op.create_primary_key(
+                constraint_name="metric_pk",
+                columns=["key", "timestamp", "step", "run_uuid", "value"],
+            )
 
 
 def downgrade():
