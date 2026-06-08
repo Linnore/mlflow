@@ -1,5 +1,4 @@
-"""
-The ``mlflow`` module provides a high-level "fluent" API for starting and managing MLflow runs.
+"""The ``mlflow`` module provides a high-level "fluent" API for starting and managing MLflow runs.
 For example:
 
 .. code:: python
@@ -446,3 +445,13 @@ with contextlib.suppress(Exception):
 from mlflow.telemetry import set_telemetry_client
 
 set_telemetry_client()
+
+
+# Register Oceanbase dialects for SQLAlchemy
+from importlib.util import find_spec
+
+from sqlalchemy.dialects import registry
+
+if find_spec("pyobsql.schema.dialect"):
+    registry.register("mysql.obmysql", "pyobsql.schema.dialect", "OceanBaseDialect")
+    registry.register("mysql.aobmysql", "pyobsql.schema.dialect", "AsyncOceanBaseDialect")
