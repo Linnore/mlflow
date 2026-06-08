@@ -17,14 +17,18 @@ depends_on = None
 
 
 def _is_oceanbase(conn):
-    dialect_name = conn.dialect.name
     driver = getattr(conn.dialect, "driver", "")
+    if "obmysql" in driver:
+        return True
 
-    engine = getattr(conn, "engine", None)
-    url_str = str(engine.url) if engine and hasattr(engine, "url") else ""
-    url_str = url_str.lower()
+    try:
+        version_str = conn.execute(sa.text("SELECT VERSION()")).scalar()
+        if "OceanBase" in version_str or "Oceanbase" in version_str:
+            return True
+    except Exception:
+        pass
 
-    return dialect_name == "mysql" and ("obmysql" in driver or "oceanbase" in url_str)
+    return False
 
 
 def upgrade():
