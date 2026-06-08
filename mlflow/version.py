@@ -2,7 +2,7 @@
 import importlib.metadata
 import re
 
-VERSION = "3.14.0"
+VERSION = "3.14.0+obmysql"
 
 
 def is_release_version():

@@ -9,7 +9,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "mlflow"
-version = "3.14.0"
+version = "3.14.0+obmysql"
 description = "MLflow is an open source platform for the complete machine learning lifecycle"
 readme = "README.md"
 keywords = ["mlflow", "ai", "databricks"]
@@ -27,8 +27,8 @@ classifiers = [
 ]
 requires-python = ">=3.10"
 dependencies = [
-  "mlflow-skinny==3.14.0",
-  "mlflow-tracing==3.14.0",
+  "mlflow-skinny==3.14.0+obmysql",
+  "mlflow-tracing==3.14.0+obmysql",
   "Flask-CORS<7",
   "Flask<4",
   "aiohttp<4,>=3.7.0",
@@ -42,6 +42,7 @@ dependencies = [
   "numpy<3",
   "pandas<3",
   "pyarrow<25,>=4.0.0",
+  "pyobsql<2,>=0.1.0",
   "scikit-learn<2",
   "scipy<2",
   "skops<1",
