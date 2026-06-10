@@ -17,17 +17,12 @@ depends_on = None
 
 
 def _is_oceanbase(conn):
-    driver = getattr(conn.dialect, "driver", "")
-    if "obmysql" in driver:
-        return True
-
     try:
-        version_str = conn.execute(sa.text("SELECT VERSION()")).scalar()
-        if "OceanBase" in version_str or "Oceanbase" in version_str:
+        comment = conn.execute(sa.text("SELECT @@version_comment")).scalar()
+        if comment and "oceanbase" in str(comment).lower():
             return True
     except Exception:
         pass
-
     return False
 
 
